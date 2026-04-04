@@ -1,0 +1,4 @@
+/vendor/
+.DS_Store
+*.log
+/librerias/fpdf/  # Opcional: si quieres que otros la descarguen aparte
