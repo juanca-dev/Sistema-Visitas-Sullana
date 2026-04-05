@@ -13,7 +13,7 @@
     
     <div class="row" style="margin-top: 30px;">
         <div class="col s12 m6">
-            <h4 class="teal-text text-darken-3" style="font-weight: 500; margin: 0;">
+            <h4 class="blue-text text-darken-3" style="font-weight: 500; margin: 0;">
                 <i class="material-icons left" style="font-size: 35px;">history</i> Historial General
             </h4>
         </div>

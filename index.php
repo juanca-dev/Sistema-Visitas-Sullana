@@ -20,7 +20,7 @@
     <div class="container" style="margin-top: 20px;">
         <div class="row">
             <div class="col s12 m4">
-                <div class="card teal darken-1 white-text" style="border-radius: 8px; padding: 15px;">
+                <div class="card blue darken-1 white-text" style="border-radius: 8px; padding: 15px;">
                     <div class="row valign-wrapper" style="margin-bottom: 0;">
                         <div class="col s4"><i class="material-icons medium">group</i></div>
                         <div class="col s8 right-align">
@@ -61,7 +61,7 @@
         <div class="card-panel z-depth-2" style="border-radius: 8px;">
             <form action="server/agregar.php" method="post">
                 <div class="row">
-                    <h4 class="center-align teal-text text-darken-3" style="font-weight: 500;">Registro de Visitante</h4>
+                    <h4 class="center-align blue-text text-darken-3" style="font-weight: 500;">Registro de Visitante</h4>
                     <p class="center-align grey-text">Ingresa el DNI para consultar datos automáticamente</p>
                     
                     <div class="input-field col s12 m2">
@@ -98,7 +98,7 @@
                 </div>
 
                 <div class="row center-align">
-                    <button type="submit" class="waves-effect waves-light btn-large teal darken-2" style="width: 100%; max-width: 400px; border-radius: 30px;">
+                    <button type="submit" class="waves-effect waves-light btn-large blue darken-2" style="width: 100%; max-width: 400px; border-radius: 30px;">
                         <i class="material-icons left">send</i>
                         Capturar e Ingresar
                     </button>
@@ -110,7 +110,7 @@
             <div class="col s12">
                 <div class="card" style="border-radius: 8px;">
                     <div class="card-content">
-                        <span class="card-title teal-text text-darken-4">
+                        <span class="card-title blue-text text-darken-4">
                             <i class="material-icons left">list</i>Visitantes de Hoy
                         </span>
                         <div class="divider" style="margin-bottom: 20px;"></div>

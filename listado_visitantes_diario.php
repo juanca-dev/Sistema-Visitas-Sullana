@@ -23,7 +23,7 @@
         /* Mantengo tus estilos y añado una mejora para el botón */
         .resaltado-movimiento {
             font-weight: bold;
-            color: #ee6e73;
+            color:#2196f3
             font-size: 1.8em;
             text-align: center;
             margin-bottom: 20px;
@@ -42,7 +42,7 @@
         }
 
         table.striped th {
-            background-color: #26a69a; /* Color Teal de Materialize */
+            background-color: #1565c0; /* Color blue de Materialize */
             color: white;
         }
 

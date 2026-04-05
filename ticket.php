@@ -24,7 +24,7 @@ $v = mysqli_fetch_assoc($res);
     <style>
         body { background-color: #f4f4f4; }
         .ticket-card { margin-top: 50px; border-radius: 15px; overflow: hidden; }
-        .qr-header { background-color: #ee6e73; color: white; padding: 20px; }
+        .qr-header { background-color:#2196f3 color: white; padding: 20px; }
     </center></style>
 </head>
 <body>

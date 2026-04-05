@@ -9,7 +9,7 @@ include "header.php";
     body { display: flex; min-height: 100vh; flex-direction: column; background-color: #f5f5f5; }
     .login-container { margin-top: 5%; }
     .card-login { border-radius: 15px; padding: 20px; }
-    .logo-login { font-size: 5rem; color: #ee6e73; }
+    .logo-login { font-size: 5rem; color:#2196f3 }
 </style>
 
 <div class="container login-container">

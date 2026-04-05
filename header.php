@@ -7,8 +7,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="librerias/butterup-main/butterup.css">
-    <style>
-        body { background-color: #f5f5f5; margin: 0; }
-    </style>
+  <style>
+    /* Esto forzará a todos los nav a ser azules */
+    nav {
+        background-color: #0d47a1 !important;
+    }
+</style>
 </head>
 <body>
