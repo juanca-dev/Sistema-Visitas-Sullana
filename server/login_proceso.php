@@ -1,29 +1,59 @@
 <?php
+/**
+ * login_proceso.php
+ * Procesa el formulario de login y crea la sesión.
+ * Ubicación: /server/login_proceso.php
+ */
+
 session_start();
-require_once "Visitas.php";
 
-$usuario  = isset($_POST['usuario']) ? trim($_POST['usuario']) : '';
-$password = isset($_POST['password']) ? trim($_POST['password']) : '';
-
-// CASO 1: ENTRAR COMO ADMIN
-if ($usuario === 'admin' && $password === 'admin') {
-    $_SESSION['usuario_id']   = 1;
-    $_SESSION['usuario_nom']  = 'admin';
-    $_SESSION['rol']          = 'admin'; // El admin SI ve el histórico
-    header("location:../index.php");
-    exit();
-} 
-// CASO 2: ENTRAR COMO PORTERIA
-elseif ($usuario === 'porteria' && $password === 'admin') {
-    $_SESSION['usuario_id']   = 2;
-    $_SESSION['usuario_nom']  = 'porteria';
-    $_SESSION['rol']          = 'recepcion'; // El recepcionista NO ve el histórico
-    header("location:../index.php");
-    exit();
-} 
-// ERROR
-else {
-    $_SESSION['mensaje'] = "Usuario o clave incorrectos en el sistema de prueba.";
-    header("location:../login.php");
-    exit();
+// Si ya tiene sesión activa, redirigir directo
+if (isset($_SESSION['usuario_id'])) {
+    header('Location: ../index.php');
+    exit;
 }
+
+// Solo aceptar POST
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Location: ../login.php');
+    exit;
+}
+
+// Requerir la clase (Visitas require Conexion internamente)
+require_once __DIR__ . '/Visitas.php';
+
+// Sanitizar entradas
+$usuario  = trim($_POST['usuario']  ?? '');
+$password = trim($_POST['password'] ?? '');
+
+if (empty($usuario) || empty($password)) {
+    $_SESSION['mensaje'] = 'campos_vacios';
+    header('Location: ../login.php');
+    exit;
+}
+
+// Buscar usuario en la BD
+$obj  = new Visitas();
+$user = $obj->buscarUsuario($usuario);   // retorna array|null
+
+if ($user === null) {
+    // Usuario no existe o está inactivo
+    $_SESSION['mensaje'] = 'usuario_incorrecto';
+    header('Location: ../login.php');
+    exit;
+}
+
+// Verificar contraseña con password_verify (hash bcrypt)
+if (!password_verify($password, $user['password'])) {
+    $_SESSION['mensaje'] = 'usuario_incorrecto';
+    header('Location: ../login.php');
+    exit;
+}
+
+// ✅ Credenciales correctas — crear sesión
+$_SESSION['usuario_id']  = $user['id'];
+$_SESSION['usuario_nom'] = $user['nombre'] ?? $user['usuario'];
+$_SESSION['rol']         = $user['rol'];
+
+header('Location: ../index.php');
+exit;

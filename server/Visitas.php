@@ -1,39 +1,47 @@
 <?php
+/**
+ * Visitas.php — Todo en uno, sin herencia externa.
+ * Ubicación: /server/Visitas.php
+ *
+ * Solo necesitas este archivo. No requiere Conexion.php.
+ * Sube únicamente este archivo a /server/ y listo.
+ */
+
 date_default_timezone_set('America/Lima');
+require_once __DIR__ . '/../config.php';
 
 class Visitas
 {
-    public function conexion()
+    /** @var mysqli Conexión compartida para toda la instancia */
+    private mysqli $db;
+
+    public function __construct()
     {
-        $conexion = mysqli_connect(
-            'localhost',
-            'root', 
-            '',
-            'libro_visitas'
-        );
-
-        if (!$conexion) {
-            die("Error en la conexión a la base de datos: " . mysqli_connect_error());
-        }
-
-        return $conexion;
+        mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+        $this->db = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+        $this->db->set_charset('utf8mb4');
     }
 
-    public function agregarVisita($datos)
+    /**
+     * Expone la conexión para scripts legados (reporte_excel.php, reporte_pdf.php).
+     */
+    public function getConexion(): mysqli
     {
-        $conexion = $this->conexion();
-        // Usamos t_visitas como en el resto de tu código
-        $sql = "INSERT INTO t_visitas (paterno, materno, nombre, dni, motivo, fecha, qr_token, en_planta)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        
-        $query = mysqli_prepare($conexion, $sql);
-        
-        if (!$query) {
-            die("Error al preparar la consulta: " . mysqli_error($conexion));
-        }
+        return $this->db;
+    }
 
-        mysqli_stmt_bind_param(
-            $query,
+    // ──────────────────────────────────────────────
+    //  VISITAS
+    // ──────────────────────────────────────────────
+
+    public function agregarVisita(array $datos): bool
+    {
+        $sql = "INSERT INTO t_visitas
+                    (paterno, materno, nombre, dni, motivo, fecha, qr_token, en_planta)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param(
             'sssssssi',
             $datos['paterno'],
             $datos['materno'],
@@ -44,67 +52,118 @@ class Visitas
             $datos['qr_token'],
             $datos['en_planta']
         );
-
-        $resultado = mysqli_stmt_execute($query);
-        mysqli_stmt_close($query);
+        $resultado = $stmt->execute();
+        $stmt->close();
         return $resultado;
     }
 
-    public function mostrarDia(){
-        $conexion = $this->conexion();
-        $fecha = date("Y-m-d");
-        // Filtramos por los que están hoy dentro
-        $sql = "SELECT * FROM t_visitas WHERE fecha LIKE '%$fecha%' AND en_planta = 1";
-        $respuesta = mysqli_query($conexion, $sql);
-        return mysqli_fetch_all($respuesta, MYSQLI_ASSOC);
+    /** Visitantes actualmente en planta (hoy). */
+    public function mostrarDia(): array
+    {
+        $fecha = date('Y-m-d');
+        $stmt  = $this->db->prepare(
+            "SELECT * FROM t_visitas
+             WHERE DATE(fecha) = ? AND en_planta = 1
+             ORDER BY fecha DESC"
+        );
+        $stmt->bind_param('s', $fecha);
+        $stmt->execute();
+        return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     }
 
-    public function marcarSalida($token){
-        $conexion = $this->conexion();
+    /** Todo el historial sin filtro de fecha. */
+    public function mostrarTodos(): array
+    {
+        $stmt = $this->db->prepare(
+            "SELECT * FROM t_visitas ORDER BY fecha DESC"
+        );
+        $stmt->execute();
+        return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    }
+
+    /** Marca la salida por qr_token. */
+    public function marcarSalida(string $token): bool
+    {
         $fecha_salida = date('Y-m-d H:i:s');
-        $sql = "UPDATE t_visitas SET fecha_salida = ?, en_planta = 0 WHERE qr_token = ?";
-        
-        $query = mysqli_prepare($conexion, $sql);
-        mysqli_stmt_bind_param($query, 'ss', $fecha_salida, $token);
-        $resultado = mysqli_stmt_execute($query);
-        
-        mysqli_stmt_close($query);
+        $stmt = $this->db->prepare(
+            "UPDATE t_visitas
+             SET fecha_salida = ?, en_planta = 0
+             WHERE qr_token = ?"
+        );
+        $stmt->bind_param('ss', $fecha_salida, $token);
+        $resultado = $stmt->execute();
+        $stmt->close();
         return $resultado;
     }
 
-    public function mostrarTodos(){
-        $conexion = $this->conexion();
-        $sql = "SELECT * FROM t_visitas ORDER BY fecha DESC";
-        $respuesta = mysqli_query($conexion, $sql);
-        return mysqli_fetch_all($respuesta, MYSQLI_ASSOC);
+    /** Busca una visita por su qr_token (para ticket.php). */
+    public function buscarPorToken(string $token): ?array
+    {
+        $stmt = $this->db->prepare(
+            "SELECT * FROM t_visitas WHERE qr_token = ? LIMIT 1"
+        );
+        $stmt->bind_param('s', $token);
+        $stmt->execute();
+        $result = $stmt->get_result()->fetch_assoc();
+        return $result ?: null;
     }
 
-    // --- FUNCIONES DEL DASHBOARD ACTUALIZADAS ---
+    // ──────────────────────────────────────────────
+    //  CONTADORES (dashboard)
+    // ──────────────────────────────────────────────
 
-    public function contarTotalHoy() {
-        $conexion = $this->conexion();
-        // Buscamos en t_visitas donde la fecha sea hoy
-        $sql = "SELECT COUNT(*) as total FROM t_visitas WHERE DATE(fecha) = CURDATE()";
-        $res = mysqli_query($conexion, $sql);
-        $data = mysqli_fetch_assoc($res);
-        return $data['total'] ?? 0;
+    public function contarTotalHoy(): int
+    {
+        $stmt = $this->db->prepare(
+            "SELECT COUNT(*) FROM t_visitas WHERE DATE(fecha) = CURDATE()"
+        );
+        $stmt->execute();
+        $stmt->bind_result($total);
+        $stmt->fetch();
+        return (int) $total;
     }
 
-    public function contarEnPlanta() {
-        $conexion = $this->conexion();
-        // Personas que están marcadas como en_planta = 1
-        $sql = "SELECT COUNT(*) as total FROM t_visitas WHERE DATE(fecha) = CURDATE() AND en_planta = 1";
-        $res = mysqli_query($conexion, $sql);
-        $data = mysqli_fetch_assoc($res);
-        return $data['total'] ?? 0;
+    public function contarEnPlanta(): int
+    {
+        $stmt = $this->db->prepare(
+            "SELECT COUNT(*) FROM t_visitas
+             WHERE DATE(fecha) = CURDATE() AND en_planta = 1"
+        );
+        $stmt->execute();
+        $stmt->bind_result($total);
+        $stmt->fetch();
+        return (int) $total;
     }
 
-    public function contarEgresosHoy() {
-        $conexion = $this->conexion();
-        // Personas de hoy que ya salieron (en_planta = 0 y tienen fecha de salida)
-        $sql = "SELECT COUNT(*) as total FROM t_visitas WHERE DATE(fecha) = CURDATE() AND en_planta = 0 AND fecha_salida IS NOT NULL";
-        $res = mysqli_query($conexion, $sql);
-        $data = mysqli_fetch_assoc($res);
-        return $data['total'] ?? 0;
+    public function contarEgresosHoy(): int
+    {
+        $stmt = $this->db->prepare(
+            "SELECT COUNT(*) FROM t_visitas
+             WHERE DATE(fecha) = CURDATE()
+               AND en_planta = 0
+               AND fecha_salida IS NOT NULL"
+        );
+        $stmt->execute();
+        $stmt->bind_result($total);
+        $stmt->fetch();
+        return (int) $total;
+    }
+
+    // ──────────────────────────────────────────────
+    //  USUARIOS
+    // ──────────────────────────────────────────────
+
+    /** Busca un usuario activo por nombre de usuario. */
+    public function buscarUsuario(string $usuario): ?array
+    {
+        $stmt = $this->db->prepare(
+            "SELECT * FROM t_usuarios
+             WHERE usuario = ? AND activo = 1
+             LIMIT 1"
+        );
+        $stmt->bind_param('s', $usuario);
+        $stmt->execute();
+        $result = $stmt->get_result()->fetch_assoc();
+        return $result ?: null;
     }
 }
